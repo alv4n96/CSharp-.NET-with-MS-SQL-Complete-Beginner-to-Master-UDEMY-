@@ -82,10 +82,38 @@ internal class Program
 
         string ComputerJson = File.ReadAllText("ComputersSnake.json");
 
-        Mapper mapper = new Mapper(new MapperConfiguration(cfg =>
+        // Mapper mapper = new Mapper(new MapperConfiguration(cfg =>
+        // {
+        //     cfg.CreateMap<ComputerSnake, Computer>()
+        //         .ForMember(dest => dest.ComputerId, opt =>
+        //             opt.MapFrom(src => src.computer_id))
+        //         .ForMember(dest => dest.CPUCores, opt =>
+        //             opt.MapFrom(src => src.cpu_cores))
+        //         .ForMember(dest => dest.HasLTE, opt =>
+        //             opt.MapFrom(src => src.has_lte))
+        //         .ForMember(dest => dest.HasWifi, opt =>
+        //             opt.MapFrom(src => src.has_wifi))
+        //         .ForMember(dest => dest.Motherboard, opt =>
+        //             opt.MapFrom(src => src.motherboard))
+        //         .ForMember(dest => dest.VideoCard, opt =>
+        //             opt.MapFrom(src => src.video_card))
+        //         .ForMember(dest => dest.ReleaseDate, opt =>
+        //             opt.MapFrom(src => src.release_date))
+        //         .ForMember(dest => dest.Price, opt =>
+        //             opt.MapFrom(src => src.price));
+        // }));
+
+        IEnumerable<Computer>? computers = System.Text.Json.JsonSerializer.Deserialize<IEnumerable<Computer>>(ComputerJson);
+
+        if (computers != null)
         {
-            cfg.CreateMap<Computer, Computer>();
-        }));
+            // IEnumerable<Computer> mappedComputers = mapper.Map<IEnumerable<Computer>>(computers);
+
+            foreach (Computer computer in computers)
+            {
+                Console.WriteLine($"Motherboard: {computer.Motherboard}");
+            }
+        }
 
         // System.Console.WriteLine($"{ComputerJson}");
 
