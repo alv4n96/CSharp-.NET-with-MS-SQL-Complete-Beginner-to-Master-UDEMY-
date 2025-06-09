@@ -1,3 +1,5 @@
 # Specific project directories
 bin/
 obj/
+bin/*
+obj/*
