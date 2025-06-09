@@ -1,0 +1,5 @@
+
+SELECT * FROM TutorialAppSchema.Computer
+
+SELECT * FROM TutorialAppSchema.Computer
+
