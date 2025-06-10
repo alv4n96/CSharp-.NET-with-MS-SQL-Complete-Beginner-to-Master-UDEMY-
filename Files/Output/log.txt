@@ -1,0 +1,19 @@
+
+INSERT INTO TutorialAppSchema.Computer (
+                Motherboard,
+                HasWifi,
+                HasLTE,
+                ReleaseDate,
+                Price,
+                VideoCard
+            ) VALUES ('ASUS ROG Strix X570-E','False','True','2020-07-07','299.99','AMD Radeon RX 6800 XT')
+
+INSERT INTO TutorialAppSchema.Computer (
+                Motherboard,
+                HasWifi,
+                HasLTE,
+                ReleaseDate,
+                Price,
+                VideoCard
+            ) VALUES ('ASUS ROG Strix X570-E','False','True','2020-07-07','299.99','AMD Radeon RX 6800 XT')
+
