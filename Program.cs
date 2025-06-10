@@ -1,11 +1,6 @@
-﻿using System.Globalization;
-using System.Text.Json;
-using AutoMapper;
-using HelloWorld.Data;
+﻿using HelloWorld.Data;
 using HelloWorld.Models;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 internal class Program
 {
@@ -17,7 +12,7 @@ internal class Program
             .Build();
 
         DataContextDapper dapper = new DataContextDapper(config);
-        DataContextEF entityFramework = new DataContextEF(config);
+        // DataContextEF entityFramework = new DataContextEF(config);
 
         string sqlCommand = "SELECT GETDATE()";
 

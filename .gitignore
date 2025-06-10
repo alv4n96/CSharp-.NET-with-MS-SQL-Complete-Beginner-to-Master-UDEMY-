@@ -1,5 +1,2 @@
-# Specific project directories
-/bin
-/obj
-obj/*
-bin/*
+/bin/
+/obj/
