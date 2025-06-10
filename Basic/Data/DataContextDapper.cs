@@ -51,4 +51,8 @@ public class DataContextDapper
         return dbConnection.Execute(sql, parameterObject);
     }
 
+    public void ExecuteProcedureMulti(string sql, IDbConnection dbConnection)
+    {
+        dbConnection.Execute(sql);
+    }
 }

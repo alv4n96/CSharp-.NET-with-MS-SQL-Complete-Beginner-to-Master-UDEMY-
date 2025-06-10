@@ -1,11 +1,12 @@
 ﻿using System.Threading.Tasks;
 using HelloWorld.Models;
 using HelloWorld.Service;
+using HelloWorld.Service.Seeds;
 using Microsoft.Extensions.Configuration;
 
 internal class Program
 {
-    private static async Task Main(string[] args)
+    private static void Main(string[] args)
     {
         IConfiguration config = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
@@ -20,7 +21,10 @@ internal class Program
 
         // MappingData.Run();
 
-        await AsyncAwaitImplement.Run();
+        // await AsyncAwaitImplement.Run();
+
+        //Utilites
+        // SQLSeeds.Run(config);
 
     }
 
