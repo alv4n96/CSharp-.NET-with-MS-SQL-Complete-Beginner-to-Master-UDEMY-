@@ -14,7 +14,7 @@ public class UserJobInfoController : ControllerBase
         _dapper = new DataContextDapper(config);
     }
 
-    [HttpGet("UserJobInfo/{userId}")]
+    [HttpGet("{userId}")]
     public IEnumerable<UserJobInfo> GetUserJobInfo(int userId)
     {
         return _dapper.LoadData<UserJobInfo>(@"
@@ -25,7 +25,7 @@ public class UserJobInfoController : ControllerBase
                 WHERE UserId = " + userId.ToString());
     }
 
-    [HttpPost("UserJobInfo")]
+    [HttpPost()]
     public IActionResult PostUserJobInfo(UserJobInfo userJobInfoForInsert)
     {
         string sql = @"
@@ -45,7 +45,7 @@ public class UserJobInfoController : ControllerBase
         throw new Exception("Adding User Job Info failed on save");
     }
 
-    [HttpPut("UserJobInfo")]
+    [HttpPut()]
     public IActionResult PutUserJobInfo(UserJobInfo userJobInfoForUpdate)
     {
         string sql = "UPDATE TutorialAppSchema.UserJobInfo SET Department='"
@@ -62,7 +62,7 @@ public class UserJobInfoController : ControllerBase
     }
 
 
-    [HttpDelete("UserJobInfo/{userId}")]
+    [HttpDelete("{userId}")]
     public IActionResult DeleteUserJobInfo(int userId)
     {
         string sql = @"

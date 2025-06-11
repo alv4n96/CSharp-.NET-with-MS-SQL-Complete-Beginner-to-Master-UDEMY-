@@ -1,8 +1,10 @@
 using System.Data;
 using AutoMapper;
 using DotnetAPI.Data;
+using DotnetAPI.DTOs.User;
 using DotnetAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DotnetAPI.Controllers;
 
@@ -17,34 +19,34 @@ public class UserJobInfoEFController : ControllerBase
         _entityFramework = new DataContextEF(config);
         _mapper = new Mapper(new MapperConfiguration(cfg =>
         {
-            cfg.CreateMap<UserSalary, UserSalary>().ReverseMap();
+            cfg.CreateMap<UserJobInfo, UserJobInfo>().ReverseMap();
         }));
     }
 
     [HttpGet("{userId}")]
-    public IEnumerable<UserSalary> GetUserSalaryEF(int userId)
+    public IEnumerable<UserJobInfo> GetUserJobInfoEF(int userId)
     {
-        return _entityFramework.UserSalary
+        return _entityFramework.UserJobInfo
             .Where(u => u.UserId == userId)
             .ToList();
     }
 
     [HttpPost()]
-    public IActionResult PostUserSalaryEf(UserSalary userForInsert)
+    public IActionResult PostUserJobInfoEf(UserJobInfo userForInsert)
     {
-        _entityFramework.UserSalary.Add(userForInsert);
+        _entityFramework.UserJobInfo.Add(userForInsert);
         if (_entityFramework.SaveChanges() > 0)
         {
             return Ok();
         }
-        throw new Exception("Adding UserSalary failed on save");
+        throw new Exception("Adding UserJobInfo failed on save");
     }
 
 
     [HttpPut()]
-    public IActionResult PutUserSalaryEf(UserSalary userForUpdate)
+    public IActionResult PutUserJobInfoEf(UserJobInfo userForUpdate)
     {
-        UserSalary? userToUpdate = _entityFramework.UserSalary
+        UserJobInfo? userToUpdate = _entityFramework.UserJobInfo
             .Where(u => u.UserId == userForUpdate.UserId)
             .FirstOrDefault();
 
@@ -55,30 +57,29 @@ public class UserJobInfoEFController : ControllerBase
             {
                 return Ok();
             }
-            throw new Exception("Updating UserSalary failed on save");
+            throw new Exception("Updating UserJobInfo failed on save");
         }
-        throw new Exception("Failed to find UserSalary to Update");
+        throw new Exception("Failed to find UserJobInfo to Update");
     }
 
 
     [HttpDelete("{userId}")]
-    public IActionResult DeleteUserSalaryEf(int userId)
+    public IActionResult DeleteUserJobInfoEf(int userId)
     {
-        UserSalary? userToDelete = _entityFramework.UserSalary
+        UserJobInfo? userToDelete = _entityFramework.UserJobInfo
             .Where(u => u.UserId == userId)
             .FirstOrDefault();
 
         if (userToDelete != null)
         {
-            _entityFramework.UserSalary.Remove(userToDelete);
+            _entityFramework.UserJobInfo.Remove(userToDelete);
             if (_entityFramework.SaveChanges() > 0)
             {
                 return Ok();
             }
-            throw new Exception("Deleting UserSalary failed on save");
+            throw new Exception("Deleting UserJobInfo failed on save");
         }
-        throw new Exception("Failed to find UserSalary to delete");
+        throw new Exception("Failed to find UserJobInfo to delete");
     }
-
 
 }
