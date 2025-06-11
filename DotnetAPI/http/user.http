@@ -1,0 +1,62 @@
+@host = http://localhost:5000
+
+### USER - Get User
+
+GET {{host}}/user/
+
+### USER - Get User
+
+@userId = 1001
+
+GET {{host}}/user/{{userId}}
+
+### USER - Update User
+
+PUT {{host}}/user/{{userId}} 
+Content-Type: application/json
+
+{
+    "firstName": "Alvan",
+    "lastName": "Testing",
+    "email": "example@test.com",
+    "gender": "male",
+    "active": false
+}
+
+### USER - DELETE User
+
+DELETE  {{host}}/user/{{userId}} 
+Content-Type: application/json
+
+### USER - CREATE User
+
+POST {{host}}/user/ 
+Content-Type: application/json
+
+{
+    "firstName": "Alvan",
+    "lastName": "Testing",
+    "email": "example@test.com",
+    "gender": "male",
+    "active": false
+}
+
+### USER - TEST CONNECTION
+
+GET {{host}}/user/test-connection
+
+### USER - TEST PARAM
+
+@text = Alvan kan udah bilang sekarang
+
+GET {{host}}/user/test-param?text={{text}}
+
+### USER - TEST VALUE
+
+@text = ini nyoba dari test value
+
+GET {{host}}/user/test-value/{{text}}
+
+### Weather
+
+GET {{host}}/WeatherForecast
