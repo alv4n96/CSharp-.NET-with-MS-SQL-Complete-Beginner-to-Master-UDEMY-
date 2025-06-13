@@ -13,6 +13,21 @@ Content-Type: application/json
     "passwordConfirm": "YourPassword123!"
 }
 
+### Register User Update
+
+POST http://localhost:5000/Auth/Register
+Content-Type: application/json
+
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "gender": "Male",
+    "active": true,
+    "password": "P@ssw0rd!",
+    "passwordConfirm": "P@ssw0rd!"
+}
+
 ### Login User
 
 POST {{host}}/Auth/Login
@@ -21,4 +36,14 @@ Content-Type: application/json
 {
     "email": "user@example.com",
     "password": "YourPassword123!"
+}
+
+### Login User Update
+
+POST {{host}}/Auth/Login
+Content-Type: application/json
+
+{
+    "email": "john.doe@example.com",
+    "password": "P@ssw0rd!"
 }

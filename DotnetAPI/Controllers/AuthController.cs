@@ -1,4 +1,6 @@
 using System.Data;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using AutoMapper;
@@ -9,6 +11,7 @@ using DotnetAPI.Models;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DotnetAPI.Controllers;
 
@@ -49,7 +52,7 @@ public class AuthController : ControllerBase
 
             // string passwordSaltPlusString = _configuration.GetSection("AppSettings:PasswordKey").Value + Convert.ToBase64String(passwordSalt);
 
-            byte[] passwordHash = GetPasswordHash(registerUser.Password, passwordSalt);
+            byte[] passwordHash = getPasswordHash(registerUser.Password, passwordSalt);
 
             string sqlAddAuth = @"INSERT INTO TutorialAppSchema.Auth (Email, PasswordHash, PasswordSalt)
             VALUES (@Email, @PasswordHash, @PasswordSalt);";
@@ -60,7 +63,42 @@ public class AuthController : ControllerBase
             parameters.Add("@PasswordSalt", passwordSalt, DbType.Binary);
             if (_dapper.ExecuteSql(sqlAddAuth, parameters))
             {
-                return Ok(new { Message = "User signed up successfully." });
+
+                string sql = @"
+                            INSERT INTO TutorialAppSchema.Users
+                                (
+                                [FirstName],
+                                [LastName],
+                                [Email],
+                                [Gender],
+                                [Active]
+                                )
+                            VALUES
+                                (
+                                @FirstName
+                                ,@LastName
+                                ,@Email
+                                ,@Gender
+                                ,@Active
+                                    )";
+
+                parameters = new DynamicParameters();
+                // parameters.Add("UserId", userId, DbType.Int32);
+                parameters.Add("FirstName", registerUser.FirstName, DbType.String);
+                parameters.Add("LastName", registerUser.LastName, DbType.String);
+                parameters.Add("Email", registerUser.Email, DbType.String);
+                parameters.Add("Gender", registerUser.Gender, DbType.String);
+                parameters.Add("Active", registerUser.Active, DbType.Boolean);
+
+                if (_dapper.ExecuteSql(sql, parameters))
+                {
+                    return Ok(new { Message = "User signed up successfully." });
+                }
+                else
+                {
+                    throw new Exception("Failed to create user");
+                }
+
             }
             else
             {
@@ -90,7 +128,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new { Message = "Invalid email or password." });
         }
         // string passwordSaltPlusString = _configuration.GetSection("AppSettings:PasswordKey").Value + user.PasswordSalt;
-        byte[] passwordHash = GetPasswordHash(loginUser.Password, user.PasswordSalt);
+        byte[] passwordHash = getPasswordHash(loginUser.Password, user.PasswordSalt);
 
         // if (passwordHash == user.PasswordHash)
         for (int i = 0; i < passwordHash.Length; i++)
@@ -101,9 +139,18 @@ public class AuthController : ControllerBase
             }
         }
 
+        string userIdSQL = @"SELECT UserId FROM TutorialAppSchema.Users 
+        WHERE Email = @Email;";
+        var userIdParameters = new DynamicParameters();
+        userIdParameters.Add("@Email", loginUser.Email);
+        int userId = _dapper.LoadSingleData<int>(userIdSQL, userIdParameters);
+
         if (passwordHash.SequenceEqual(user.PasswordHash))
         {
-            return Ok(new { Message = "Login successful." });
+            return Ok(new Dictionary<string, string>
+            {
+                {"Token", createToken(userId) },
+            });
         }
         else
         {
@@ -112,7 +159,7 @@ public class AuthController : ControllerBase
 
     }
 
-    private byte[] GetPasswordHash(string password, byte[] passwordSalt)
+    private byte[] getPasswordHash(string password, byte[] passwordSalt)
     {
         string passwordSaltPlusString = _configuration.GetSection("AppSettings:PasswordKey").Value + Convert.ToBase64String(passwordSalt);
 
@@ -125,4 +172,30 @@ public class AuthController : ControllerBase
         );
     }
 
+    private string createToken(int userId)
+    {
+        Claim[] claims = new[]
+        {
+            new Claim("UserId", userId.ToString()),
+        };
+
+        string? tokenKey = _configuration["AppSettings:TokenKey"];
+        if (string.IsNullOrEmpty(tokenKey))
+        {
+            throw new InvalidOperationException("TokenKey is not configured.");
+        }
+        SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
+        SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+        SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.Now.AddDays(1),
+            SigningCredentials = creds
+        };
+        JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+        SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return tokenHandler.WriteToken(token);
+
+    }
 }

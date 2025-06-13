@@ -26,11 +26,11 @@ public class DataContextDapper
         return connection.Query<T>(sql, param);
     }
 
-    public T? LoadSingleData<T>(string sql, object? param = null) where T : class
+    public T LoadSingleData<T>(string sql, object? param = null)
     {
         using (IDbConnection connection = new SqlConnection(_connectionString))
         {
-            return connection.QuerySingleOrDefault<T>(sql, param);
+            return connection.QuerySingleOrDefault<T>(sql, param)!;
         }
     }
 
