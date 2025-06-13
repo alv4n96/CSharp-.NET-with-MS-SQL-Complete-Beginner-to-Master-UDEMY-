@@ -1,0 +1,24 @@
+@host = http://localhost:5000
+# @userId = 10
+# @text = Alvan kan udah bilang sekarang
+
+### Register User
+
+POST {{host}}/Auth/Register
+Content-Type: application/json
+
+{
+    "email": "user@example.com",
+    "password": "YourPassword123!",
+    "passwordConfirm": "YourPassword123!"
+}
+
+### Login User
+
+POST {{host}}/Auth/Login
+Content-Type: application/json
+
+{
+    "email": "user@example.com",
+    "password": "YourPassword123!"
+}

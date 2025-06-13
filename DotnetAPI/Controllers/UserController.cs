@@ -18,10 +18,16 @@ public class UserController : ControllerBase
         _dapper = new DataContextDapper(config);
     }
 
+    public class CurrentDateTimeResult
+    {
+        public DateTime CurrentDateTime { get; set; }
+    }
+
     [HttpGet("test-connection")]
     public DateTime TestConnection()
     {
-        return _dapper.LoadSingleData<DateTime>("SELECT GETDATE() AS CurrentDateTime");
+        var result = _dapper.LoadSingleData<CurrentDateTimeResult>("SELECT GETDATE() AS CurrentDateTime");
+        return result!.CurrentDateTime;
     }
 
     [HttpGet()]

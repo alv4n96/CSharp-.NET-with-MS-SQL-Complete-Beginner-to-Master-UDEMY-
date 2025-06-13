@@ -12,28 +12,24 @@ namespace DotnetAPI.Controllers;
 [Route("[controller]")]
 public class UserEFController : ControllerBase
 {
-    DataContextEF _entityFramework;
+    // DataContextEF _entityFramework;
     IMapper _mapper;
-    public UserEFController(IConfiguration config)
+    IUserRepository _userRepository;
+    public UserEFController(IConfiguration config, IUserRepository userRepository)
     {
-        _entityFramework = new DataContextEF(config);
+        _userRepository = userRepository;
+        // _entityFramework = new DataContextEF(config);
         _mapper = new Mapper(new MapperConfiguration(cfg =>
-        {
-            cfg.CreateMap<CreateUserDTO, User>();
-            cfg.CreateMap<UpdateUserDTO, User>();
-        }));
+            {
+                cfg.CreateMap<CreateUserDTO, User>();
+                cfg.CreateMap<UpdateUserDTO, User>();
+            }));
     }
 
     [HttpGet("test-connection")]
     public DateTime TestConnection()
     {
-        using var command = _entityFramework.Database.GetDbConnection().CreateCommand();
-        command.CommandText = "SELECT GETDATE()";
-        _entityFramework.Database.OpenConnection();
-
-        var result = command.ExecuteScalar();
-        return Convert.ToDateTime(result);
-
+        return _userRepository.TestConnection();
     }
 
     [HttpGet()]
@@ -41,7 +37,7 @@ public class UserEFController : ControllerBase
     {
         try
         {
-            var users = _entityFramework.Users.ToList<User>();
+            var users = _userRepository.GetUsers();
 
             if (users == null || !users.Any())
             {
@@ -61,9 +57,7 @@ public class UserEFController : ControllerBase
     {
         try
         {
-            User? result = _entityFramework.Users
-                .Where(u => u.UserId == userId)
-                .FirstOrDefault();
+            User? result = _userRepository.GetUserById(userId);
 
             if (result == null)
             {
@@ -87,30 +81,20 @@ public class UserEFController : ControllerBase
     [HttpPut("{userId}")]
     public IActionResult UpdateUser(int userId, UpdateUserDTO user)
     {
-        // User userDb = (User)GetUsers(userId);
-
-
-        User? userDb = _entityFramework.Users
-            .Where(u => u.UserId == userId)
-            .FirstOrDefault();
-
-
-        if (userDb != null)
+        User? userDb = _userRepository.GetUserById(userId);
+        if (userDb == null)
         {
-            userDb = _mapper.Map(user, userDb);
-            
-            if (_entityFramework.SaveChanges() > 0)
-            {
-                return Ok(userDb);
-            }
-            else
-            {
-                return StatusCode(500, "Failed to update user");
-            }
+            return NotFound($"User with ID {userId} not found.");
+        }
+        userDb = _mapper.Map(user, userDb);
+        // _userRepository.UpdateEntity(userDb);
+        if (_userRepository.SaveChanges())
+        {
+            return Ok(userDb);
         }
         else
         {
-            return NotFound($"User with ID {userId} not found.");
+            return StatusCode(500, "Failed to update user");
         }
     }
 
@@ -119,9 +103,9 @@ public class UserEFController : ControllerBase
     {
         User userDb = _mapper.Map<User>(user);
 
-        _entityFramework.Users.Add(userDb);
+        _userRepository.AddEntity<User>(userDb);
 
-        if (_entityFramework.SaveChanges() > 0)
+        if (_userRepository.SaveChanges())
         {
             return Ok(userDb);
         }
@@ -135,22 +119,18 @@ public class UserEFController : ControllerBase
     [HttpDelete("{userId}")]
     public IActionResult DeleteUser(int userId)
     {
-
-        User? userDb = _entityFramework.Users
-            .Where(u => u.UserId == userId)
-            .FirstOrDefault();
-
+        User? userDb = _userRepository.GetUserById(userId);
         if (userDb != null)
         {
-            _entityFramework.Users.Remove(userDb);
+            _userRepository.DeleteEntity<User>(userDb);
 
-            if (_entityFramework.SaveChanges() > 0)
+            if (_userRepository.SaveChanges())
             {
-                return Ok(userDb);
+                return Ok($"User with ID {userId} deleted successfully.");
             }
             else
             {
-                return StatusCode(500, "Failed to update user");
+                return StatusCode(500, "Failed to delete user");
             }
         }
         else
