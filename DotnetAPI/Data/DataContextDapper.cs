@@ -34,7 +34,6 @@ public class DataContextDapper
         }
     }
 
-
     public bool ExecuteSql(string sql, object? param = null)
     {
         IDbConnection connection = new SqlConnection(_connectionString);
