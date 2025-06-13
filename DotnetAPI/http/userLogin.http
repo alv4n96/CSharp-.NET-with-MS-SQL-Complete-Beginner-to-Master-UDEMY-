@@ -1,4 +1,5 @@
 @host = http://localhost:5000
+# @token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwibmJmIjoxNzQ5ODA2ODA5LCJleHAiOjE3NDk4OTMyMDksImlhdCI6MTc0OTgwNjgwOX0.DwJol3tIJzHdsdR2yFMJxi8MksP5CgtExmYgpByLmkA"
 # @userId = 10
 # @text = Alvan kan udah bilang sekarang
 
@@ -47,3 +48,10 @@ Content-Type: application/json
     "email": "john.doe@example.com",
     "password": "P@ssw0rd!"
 }
+
+### Refresh Token### Refresh Token (dengan Authorization header)
+
+GET {{host}}/Auth/RefreshToken
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxMDAzIiwibmJmIjoxNzQ5ODA3OTY3LCJleHAiOjE3NDk4OTQzNjcsImlhdCI6MTc0OTgwNzk2N30.VVWbErGhbL14WVa8mrHyV0N7R7eD3bf6JChYKmdV_58
+
+
