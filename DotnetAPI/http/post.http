@@ -1,0 +1,71 @@
+@host = http://localhost:5000
+@postId = 8
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxMDAzIiwibmJmIjoxNzQ5OTk3MzM2LCJleHAiOjE3NTAwODM3MzYsImlhdCI6MTc0OTk5NzMzNn0.S5eqpAgD0qwd0-HPhexX2UE-iJBQyrLwulfOD2Hm0rY
+@searchTerm = "post"
+
+### Login User Update
+
+POST {{host}}/Auth/Login
+Content-Type: application/json
+
+{
+    "email": "john.doe@example.com",
+    "password": "P@ssw0rd!"
+}
+
+### GET all posts
+
+GET {{host}}/Post/Posts
+Authorization: Bearer {{token}}
+
+###
+
+### GET post by ID
+
+GET {{host}}/Post/Post/{{postId}}
+Authorization: Bearer {{token}}
+
+###
+
+### GET posts by user (logged-in)
+
+GET {{host}}/Post/UserPosts
+Authorization: Bearer {{token}}
+
+###
+
+### Get Posts By Search Term
+GET {{host}}/Post/PostsBySearch/{{searchTerm}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### CREATE a new post
+
+POST {{host}}/Post/CreatePost
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "postTitle": "Judul Test Posting ke 1",
+    "postContent": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+}
+
+###
+
+### UPDATE a post by ID
+
+PUT {{host}}/Post/UpdatePost/{{postId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "postTitle": "Judul Postingan yang Diperbarui",
+    "postContent": "Isi postingan setelah update."
+}
+
+###
+
+### DELETE a post by ID
+
+DELETE {{host}}/Post/DeletePost/{{postId}}
+Authorization: Bearer {{token}}

@@ -1,3 +1,6 @@
+using System.Data;
+using System.Net.WebSockets;
+using Dapper;
 using DotnetAPI.Data;
 using DotnetAPI.DTOs.Post;
 using DotnetAPI.Helpers;
@@ -81,6 +84,38 @@ public class PostController : ControllerBase
         return Ok(posts);
     }
 
+    [HttpGet("PostsBySearch/{searchTerm}")]
+    public IActionResult GetPostsBySearch(string searchTerm)
+    {
+        if (string.IsNullOrEmpty(searchTerm))
+        {
+            return BadRequest(new { Message = "Search term cannot be empty." });
+        }
+
+        string query = @"
+        SELECT 
+        PostId
+        ,UserId 
+        ,PostTitle 
+        ,PostContent 
+        ,PostCreated 
+        ,PostUpdated 
+        FROM TutorialAppSchema.Posts 
+        WHERE PostTitle LIKE @SearchTerm OR PostContent LIKE @SearchTerm
+        AND UserId = @UserId ;";
+
+        var parameters = new { SearchTerm = "%" + searchTerm + "%", UserId = this.User.FindFirst("UserId")?.Value + "" };
+        System.Console.WriteLine($"Search Term: {searchTerm}, UserId: {parameters.UserId}");
+        var posts = _dapper.LoadData<Post>(query, parameters);
+
+        if (posts == null || !posts.Any())
+        {
+            return NotFound(new { Message = "No posts found matching the search term." });
+        }
+
+        return Ok(posts);
+    }
+
     [HttpPost("CreatePost")]
     public IActionResult CreatePost(CreatePostDTO post)
     {
@@ -91,36 +126,110 @@ public class PostController : ControllerBase
 
         string userId = this.User.FindFirst("UserId")?.Value + "";
         post.UserId = int.Parse(userId);
-        post.PostCreated = DateTime.Now;
+        DateTime now = DateTime.UtcNow;
+        // post.PostUpdated = DateTime.Now;
+
+        // string query = @"INSERT INTO TutorialAppSchema.Posts (UserId, PostTitle, PostContent, PostCreated, PostUpdated) 
+        //  VALUES (@UserId, @PostTitle, @PostContent, @PostCreated, @PostUpdated);";
+        string insertQuery = @"
+        INSERT INTO TutorialAppSchema.Posts
+        (UserId, PostTitle, PostContent, PostCreated, PostUpdated)
+        VALUES (@UserId, @PostTitle, @PostContent, @PostCreated, @PostUpdated);
+
+        SELECT CAST(SCOPE_IDENTITY() AS int);
+    ";
+
+        var parameters = new DynamicParameters();
+
+        parameters.Add("@UserId", post.UserId, DbType.Int32);
+        parameters.Add("@PostTitle", post.PostTitle, DbType.String);
+        parameters.Add("@PostContent", post.PostContent, DbType.String);
+        parameters.Add("@PostCreated", now, DbType.DateTime);
+        parameters.Add("@PostUpdated", now, DbType.DateTime);
+        System.Console.WriteLine($"Parameter : {parameters}");
+
+        // string getIdQuery = "SELECT CAST(SCOPE_IDENTITY() AS int);";
+        int postId = _dapper.LoadSingleData<int>(insertQuery, parameters);
+        System.Console.WriteLine($"PostId : {postId}");
+
+        string selectQuery = @"SELECT 
+        PostId
+        ,UserId 
+        ,PostTitle 
+        ,PostContent 
+        ,PostCreated 
+        ,PostUpdated 
+        FROM TutorialAppSchema.Posts WHERE PostId = @PostId;";
+        // Note: Using SCOPE_IDENTITY() to get the last inserted ID in the same session.
+        parameters = new DynamicParameters();
+        parameters.Add("@PostId", postId, DbType.Int32);
+        // System.Console.WriteLine($"Select Query : {selectQuery}");
+        var createdPost = _dapper.LoadData<Post>(selectQuery, parameters).FirstOrDefault();
+        System.Console.WriteLine($"Created Post: {createdPost}");
+        if (createdPost == null)
+        {
+            return StatusCode(500, new { Message = "Post creation failed." });
+        }
+
+        return Ok(createdPost);
+
+    }
+
+    [HttpPut("UpdatePost/{postId}")]
+    public IActionResult UpdatePost(int postId, UpdatePostDTO post)
+    {
+        if (post == null || string.IsNullOrEmpty(post.PostTitle) || string.IsNullOrEmpty(post.PostContent))
+        {
+            return BadRequest(new { Message = "Invalid post data." });
+        }
+
+        string userId = this.User.FindFirst("UserId")?.Value + "";
+        post.UserId = int.Parse(userId);
         post.PostUpdated = DateTime.Now;
 
-        string query = @"INSERT INTO TutorialAppSchema.Posts (UserId, PostTitle, PostContent, PostCreated, PostUpdated) 
-                         VALUES (@UserId, @PostTitle, @PostContent, @PostCreated, @PostUpdated);";
+        string query = @"UPDATE TutorialAppSchema.Posts 
+                         SET PostTitle = @PostTitle, PostContent = @PostContent, PostUpdated = @PostUpdated 
+                         WHERE PostId = @PostId AND UserId = @UserId;";
 
         var parameters = new
         {
+            PostId = postId,
             UserId = post.UserId,
             PostTitle = post.PostTitle,
             PostContent = post.PostContent,
-            PostCreated = post.PostCreated,
-            PostUpdated = post.PostUpdated
+            PostUpdated = DateTime.Now
         };
-        // Execute the insert query
-        _dapper.ExecuteSql(query, parameters);
 
-        // Optionally, you can return the created post or a success message
-        // For example, you can return the created post with its ID
-        // Note: If you want to return the created post with its ID, you might need to modify the query to return the inserted ID.
-        string selectQuery = @"SELECT * FROM TutorialAppSchema.Posts WHERE PostId = SCOPE_IDENTITY();";
-        var createdPost = _dapper.LoadSingleData<Post>(selectQuery, new { UserId = post.UserId });
-        if (createdPost == null)
+        if (_dapper.ExecuteSql(query, parameters))
         {
-            return StatusCode(500, new { Message = "An error occurred while creating the post." });
+            return NoContent(); // Return 204 No Content on successful update
         }
-        return CreatedAtAction(nameof(GetPost), new { postId = createdPost.PostId }, createdPost);
-        // var result = _dapper.LoadData(query, post);
+        else
+        {
+            return NotFound(new { Message = "Post not found or you do not have permission to update this post." });
+        }
 
-        // return CreatedAtAction(nameof(GetPost), new { postId = post.PostId }, post);
     }
 
+    [HttpDelete("DeletePost/{postId}")]
+    public IActionResult DeletePost(int postId)
+    {
+        string userId = this.User.FindFirst("UserId")?.Value + "";
+        string query = @"DELETE FROM TutorialAppSchema.Posts WHERE PostId = @PostId AND UserId = @UserId;";
+
+        var parameters = new
+        {
+            PostId = postId,
+            UserId = int.Parse(userId)
+        };
+
+        if (_dapper.ExecuteSql(query, parameters))
+        {
+            return NoContent(); // Return 204 No Content on successful deletion
+        }
+        else
+        {
+            return NotFound(new { Message = "Post not found or you do not have permission to delete this post." });
+        }
+    }
 }
