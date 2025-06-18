@@ -1,6 +1,6 @@
 @host = http://localhost:5000
-@postId = 8
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxMDAzIiwibmJmIjoxNzQ5OTk3MzM2LCJleHAiOjE3NTAwODM3MzYsImlhdCI6MTc0OTk5NzMzNn0.S5eqpAgD0qwd0-HPhexX2UE-iJBQyrLwulfOD2Hm0rY
+@postId = 0
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxMDAzIiwibmJmIjoxNzUwMjI1MTg1LCJleHAiOjE3NTAzMTE1ODUsImlhdCI6MTc1MDIyNTE4NX0.2-05nOgyijyAxrvkUfzc627JRrSMHjOCrvnia7Y4hTo
 @searchTerm = "post"
 
 ### Login User Update
@@ -22,7 +22,7 @@ Authorization: Bearer {{token}}
 
 ### GET post by ID
 
-GET {{host}}/Post/Post/{{postId}}
+GET {{host}}/Post/{{postId}}/{{searchTerm}}
 Authorization: Bearer {{token}}
 
 ###

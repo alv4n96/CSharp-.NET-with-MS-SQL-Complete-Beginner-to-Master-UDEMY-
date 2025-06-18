@@ -22,36 +22,28 @@ public class PostController : ControllerBase
         _dapper = new DataContextDapper(configuration);
     }
 
-    [HttpGet("Posts")]
-    public IActionResult GetPosts()
+    [HttpGet("{postId}/{searchParam}")]
+    public IActionResult GetPosts(int postId, string searchParam = "None")
     {
+
+        string userIdString = this.User.FindFirst("UserId")?.Value + "";
+        int userId = !string.IsNullOrEmpty(userIdString) ? int.Parse(userIdString) : 0;
         string query = @"TutorialAppSchema.spPosts_Get";
+
+        var parameters = new DynamicParameters();
+        parameters.Add("UserId", userId, DbType.Int32);
+
+        if (postId != 0)
+            parameters.Add("PostId", postId, DbType.Int32);
+
+        if (searchParam != "None")
+            parameters.Add("SearchValue", searchParam, DbType.String);
+
         // Note: In a real application, you might want to use a more secure way to handle the query, such as parameterized queries.
         var posts = _dapper.LoadData<Post>(query);
         return Ok(posts);
     }
 
-    [HttpGet("Post/{postId}")]
-    public IActionResult GetPost(string postId)
-    {
-        string query = @"SELECT 
-        PostId
-        ,UserId 
-        ,PostTitle 
-        ,PostContent 
-        ,PostCreated 
-        ,PostUpdated 
-        FROM TutorialAppSchema.Posts WHERE PostId = @PostId;";
-        var parameters = new { PostId = postId };
-        var post = _dapper.LoadData<Post>(query, parameters).FirstOrDefault();
-
-        if (post == null)
-        {
-            return NotFound(new { Message = "Post not found." });
-        }
-
-        return Ok(post);
-    }
 
     [HttpGet("UserPosts")]
     public IActionResult GetUserPosts()
@@ -72,38 +64,6 @@ public class PostController : ControllerBase
         if (posts == null || !posts.Any())
         {
             return NotFound(new { Message = "No posts found for this user." });
-        }
-
-        return Ok(posts);
-    }
-
-    [HttpGet("PostsBySearch/{searchTerm}")]
-    public IActionResult GetPostsBySearch(string searchTerm)
-    {
-        if (string.IsNullOrEmpty(searchTerm))
-        {
-            return BadRequest(new { Message = "Search term cannot be empty." });
-        }
-
-        string query = @"
-        SELECT 
-        PostId
-        ,UserId 
-        ,PostTitle 
-        ,PostContent 
-        ,PostCreated 
-        ,PostUpdated 
-        FROM TutorialAppSchema.Posts 
-        WHERE PostTitle LIKE @SearchTerm OR PostContent LIKE @SearchTerm
-        AND UserId = @UserId ;";
-
-        var parameters = new { SearchTerm = "%" + searchTerm + "%", UserId = this.User.FindFirst("UserId")?.Value + "" };
-        System.Console.WriteLine($"Search Term: {searchTerm}, UserId: {parameters.UserId}");
-        var posts = _dapper.LoadData<Post>(query, parameters);
-
-        if (posts == null || !posts.Any())
-        {
-            return NotFound(new { Message = "No posts found matching the search term." });
         }
 
         return Ok(posts);
