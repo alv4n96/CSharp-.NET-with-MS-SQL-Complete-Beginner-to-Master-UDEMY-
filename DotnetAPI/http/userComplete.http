@@ -1,0 +1,67 @@
+@host = http://localhost:5000
+@UserId = 737
+@isActive = true
+
+### 🔗 Test Connection
+
+GET {{host}}/UserComplete/test-connection
+
+###
+
+### 📥 Get All Users
+
+GET {{host}}/UserComplete
+
+###
+
+### 🔍 Get User by ID
+
+GET {{host}}/UserComplete/{{UserId}}/{{isActive}}
+
+###
+
+### ➕ Create User
+
+POST {{host}}/UserComplete
+Content-Type: application/json
+
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "gender": "Male",
+    "active": true
+}
+
+###
+
+### ✏️ Update User by ID
+
+PUT {{host}}/UserComplete/{{UserId}}
+Content-Type: application/json
+
+{
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "email": "jane.doe@example.com",
+    "gender": "Female",
+    "active": false
+}
+
+###
+
+### ❌ Delete User by ID
+
+DELETE {{host}}/UserComplete/{{UserId}}
+
+###
+
+### 🔎 Get Users by Query Param
+
+GET {{host}}/UserComplete/test-param?text=sample
+
+###
+
+### 🔎 Get User by Text (Path Param)
+
+GET {{host}}/UserComplete/GetUser/sample

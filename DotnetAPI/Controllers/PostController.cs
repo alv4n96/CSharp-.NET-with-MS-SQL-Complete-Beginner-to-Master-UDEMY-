@@ -25,14 +25,7 @@ public class PostController : ControllerBase
     [HttpGet("Posts")]
     public IActionResult GetPosts()
     {
-        string query = @"SELECT 
-        PostId
-        ,UserId 
-        ,PostTitle 
-        ,PostContent 
-        ,PostCreated 
-        ,PostUpdated 
-        FROM TutorialAppSchema.Posts;";
+        string query = @"TutorialAppSchema.spPosts_Get";
         // Note: In a real application, you might want to use a more secure way to handle the query, such as parameterized queries.
         var posts = _dapper.LoadData<Post>(query);
         return Ok(posts);

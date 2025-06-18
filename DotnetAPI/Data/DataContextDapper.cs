@@ -34,10 +34,10 @@ public class DataContextDapper
         }
     }
 
-    public bool ExecuteSql(string sql, object? param = null)
+    public bool ExecuteSql(string sql, object? param = null, CommandType? command = null)
     {
         IDbConnection connection = new SqlConnection(_connectionString);
-        return connection.Execute(sql, param) > 0;
+        return connection.Execute(sql, param, commandType: command) > 0;
     }
 
     public int ExecuteSqlWithRowCount(string sql, object? param = null)
