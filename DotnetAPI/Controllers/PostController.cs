@@ -50,15 +50,10 @@ public class PostController : ControllerBase
     {
         string userId = this.User.FindFirst("UserId")?.Value + "";
 
-        string query = @"SELECT 
-        PostId
-        ,UserId 
-        ,PostTitle 
-        ,PostContent 
-        ,PostCreated 
-        ,PostUpdated 
-        FROM TutorialAppSchema.Posts WHERE UserId = @UserId;";
-        var parameters = new { UserId = userId };
+        string query = @"TutorialAppSchema.spPosts_Get";
+        var parameters = new DynamicParameters();
+        parameters.Add("UserId", userId, DbType.Int32);
+
         var posts = _dapper.LoadData<Post>(query, parameters);
 
         if (posts == null || !posts.Any())
@@ -69,8 +64,8 @@ public class PostController : ControllerBase
         return Ok(posts);
     }
 
-    [HttpPost("CreatePost")]
-    public IActionResult CreatePost(CreatePostDTO post)
+    [HttpPut("UpdatePost")]
+    public IActionResult UpdatePost(UpdatePostDTO post)
     {
         if (post == null || string.IsNullOrEmpty(post.PostTitle) || string.IsNullOrEmpty(post.PostContent))
         {
@@ -79,79 +74,19 @@ public class PostController : ControllerBase
 
         string userId = this.User.FindFirst("UserId")?.Value + "";
         post.UserId = int.Parse(userId);
-        DateTime now = DateTime.UtcNow;
         // post.PostUpdated = DateTime.Now;
 
-        // string query = @"INSERT INTO TutorialAppSchema.Posts (UserId, PostTitle, PostContent, PostCreated, PostUpdated) 
-        //  VALUES (@UserId, @PostTitle, @PostContent, @PostCreated, @PostUpdated);";
-        string insertQuery = @"
-        INSERT INTO TutorialAppSchema.Posts
-        (UserId, PostTitle, PostContent, PostCreated, PostUpdated)
-        VALUES (@UserId, @PostTitle, @PostContent, @PostCreated, @PostUpdated);
+        string query = @"TutorialAppSchema.spPosts_Upsert";
 
-        SELECT CAST(SCOPE_IDENTITY() AS int);
-    ";
 
         var parameters = new DynamicParameters();
 
-        parameters.Add("@UserId", post.UserId, DbType.Int32);
-        parameters.Add("@PostTitle", post.PostTitle, DbType.String);
-        parameters.Add("@PostContent", post.PostContent, DbType.String);
-        parameters.Add("@PostCreated", now, DbType.DateTime);
-        parameters.Add("@PostUpdated", now, DbType.DateTime);
-        System.Console.WriteLine($"Parameter : {parameters}");
+        parameters.Add("PostId", post.PostId, DbType.Int32);
+        parameters.Add("UserId", userId, DbType.Int32);
+        parameters.Add("PostTitle", post.PostTitle, DbType.String);
+        parameters.Add("PostContent", post.PostContent, DbType.String);
+        // parameters.Add("PostUpdated", post.PostUpdated, DbType.Int32);
 
-        // string getIdQuery = "SELECT CAST(SCOPE_IDENTITY() AS int);";
-        int postId = _dapper.LoadSingleData<int>(insertQuery, parameters);
-        System.Console.WriteLine($"PostId : {postId}");
-
-        string selectQuery = @"SELECT 
-        PostId
-        ,UserId 
-        ,PostTitle 
-        ,PostContent 
-        ,PostCreated 
-        ,PostUpdated 
-        FROM TutorialAppSchema.Posts WHERE PostId = @PostId;";
-        // Note: Using SCOPE_IDENTITY() to get the last inserted ID in the same session.
-        parameters = new DynamicParameters();
-        parameters.Add("@PostId", postId, DbType.Int32);
-        // System.Console.WriteLine($"Select Query : {selectQuery}");
-        var createdPost = _dapper.LoadData<Post>(selectQuery, parameters).FirstOrDefault();
-        System.Console.WriteLine($"Created Post: {createdPost}");
-        if (createdPost == null)
-        {
-            return StatusCode(500, new { Message = "Post creation failed." });
-        }
-
-        return Ok(createdPost);
-
-    }
-
-    [HttpPut("UpdatePost/{postId}")]
-    public IActionResult UpdatePost(int postId, UpdatePostDTO post)
-    {
-        if (post == null || string.IsNullOrEmpty(post.PostTitle) || string.IsNullOrEmpty(post.PostContent))
-        {
-            return BadRequest(new { Message = "Invalid post data." });
-        }
-
-        string userId = this.User.FindFirst("UserId")?.Value + "";
-        post.UserId = int.Parse(userId);
-        post.PostUpdated = DateTime.Now;
-
-        string query = @"UPDATE TutorialAppSchema.Posts 
-                         SET PostTitle = @PostTitle, PostContent = @PostContent, PostUpdated = @PostUpdated 
-                         WHERE PostId = @PostId AND UserId = @UserId;";
-
-        var parameters = new
-        {
-            PostId = postId,
-            UserId = post.UserId,
-            PostTitle = post.PostTitle,
-            PostContent = post.PostContent,
-            PostUpdated = DateTime.Now
-        };
 
         if (_dapper.ExecuteSql(query, parameters))
         {
@@ -167,14 +102,13 @@ public class PostController : ControllerBase
     [HttpDelete("DeletePost/{postId}")]
     public IActionResult DeletePost(int postId)
     {
-        string userId = this.User.FindFirst("UserId")?.Value + "";
-        string query = @"DELETE FROM TutorialAppSchema.Posts WHERE PostId = @PostId AND UserId = @UserId;";
+        string userIdString = this.User.FindFirst("UserId")?.Value + "";
+        int userId = !string.IsNullOrEmpty(userIdString) ? int.Parse(userIdString) : 0;
+        string query = @"TutorialAppSchema.spPost_Delete";
 
-        var parameters = new
-        {
-            PostId = postId,
-            UserId = int.Parse(userId)
-        };
+        var parameters = new DynamicParameters();
+        parameters.Add("PostId", postId, DbType.Int32);
+        parameters.Add("UserId", userId, DbType.Int32);
 
         if (_dapper.ExecuteSql(query, parameters))
         {

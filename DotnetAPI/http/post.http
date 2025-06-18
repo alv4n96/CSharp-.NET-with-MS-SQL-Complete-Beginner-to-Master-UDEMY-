@@ -20,13 +20,6 @@ Authorization: Bearer {{token}}
 
 ###
 
-### GET post by ID
-
-GET {{host}}/Post/{{postId}}/{{searchTerm}}
-Authorization: Bearer {{token}}
-
-###
-
 ### GET posts by user (logged-in)
 
 GET {{host}}/Post/UserPosts
@@ -35,18 +28,19 @@ Authorization: Bearer {{token}}
 ###
 
 ### Get Posts By Search Term
+
 GET {{host}}/Post/PostsBySearch/{{searchTerm}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ### CREATE a new post
 
-POST {{host}}/Post/CreatePost
+PUT {{host}}/Post/UpdatePost
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "postTitle": "Judul Test Posting ke 1",
+    "postTitle": "Judul Test Posting ke 2",
     "postContent": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
 }
 
