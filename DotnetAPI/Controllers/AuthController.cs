@@ -1,5 +1,6 @@
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO.Compression;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -43,75 +44,49 @@ public class AuthController : ControllerBase
             // parameters.Add("@Password", registerUser.Password); // In a real application, hash the password before storing it
             // _dapper.Execute(query, parameters); 
             IEnumerable<string> existingUsers = _dapper.LoadData<string>(query, parameters);
-            if (existingUsers.Any())
+            if (!existingUsers.Any())
             {
-                return BadRequest(new { Message = "User with this email already exists." });
-            }
-
-            byte[] passwordSalt = new byte[128 / 2];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetNonZeroBytes(passwordSalt);
-            }
-
-            // string passwordSaltPlusString = _configuration.GetSection("AppSettings:PasswordKey").Value + Convert.ToBase64String(passwordSalt);
-
-            byte[] passwordHash = _authHelper.GetPasswordHash(registerUser.Password, passwordSalt);
-
-            string sqlAddAuth = @"INSERT INTO TutorialAppSchema.Auth (Email, PasswordHash, PasswordSalt)
-            VALUES (@Email, @PasswordHash, @PasswordSalt);";
-            // var addAuthParameters = new DynamicParameters();
-            parameters = new DynamicParameters();
-            parameters.Add("@Email", registerUser.Email);
-            parameters.Add("@PasswordHash", passwordHash, DbType.Binary);
-            parameters.Add("@PasswordSalt", passwordSalt, DbType.Binary);
-            if (_dapper.ExecuteSql(sqlAddAuth, parameters))
-            {
-
-                string sql = @"
-                            INSERT INTO TutorialAppSchema.Users
-                                (
-                                [FirstName],
-                                [LastName],
-                                [Email],
-                                [Gender],
-                                [Active]
-                                )
-                            VALUES
-                                (
-                                @FirstName
-                                ,@LastName
-                                ,@Email
-                                ,@Gender
-                                ,@Active
-                                    )";
-
-                parameters = new DynamicParameters();
-                // parameters.Add("UserId", userId, DbType.Int32);
-                parameters.Add("FirstName", registerUser.FirstName, DbType.String);
-                parameters.Add("LastName", registerUser.LastName, DbType.String);
-                parameters.Add("Email", registerUser.Email, DbType.String);
-                parameters.Add("Gender", registerUser.Gender, DbType.String);
-                parameters.Add("Active", registerUser.Active, DbType.Boolean);
-
-                if (_dapper.ExecuteSql(sql, parameters))
+                LoginUserDTO userFotSetPassword = new LoginUserDTO()
                 {
-                    return Ok(new { Message = "User signed up successfully." });
+                    Email = registerUser.Email,
+                    Password = registerUser.Password,
+                };
+
+                if (_authHelper.SetPassword(userFotSetPassword))
+                {
+
+                    string sql = "TutorialAppSchema.spUser_Upsert";
+
+                    parameters = new DynamicParameters();
+                    parameters.Add("FirstName", registerUser.FirstName, DbType.String, size: 50);
+                    parameters.Add("LastName", registerUser.LastName, DbType.String, size: 50);
+                    parameters.Add("Email", registerUser.Email, DbType.String, size: 50);
+                    parameters.Add("Gender", registerUser.Gender, DbType.String, size: 50);
+                    parameters.Add("JobTitle", registerUser.JobTitle, DbType.String, size: 50);
+                    parameters.Add("Department", registerUser.Department, DbType.String, size: 50);
+                    parameters.Add("Salary", registerUser.Salary, DbType.Decimal, precision: 18, scale: 4);
+                    parameters.Add("Active", registerUser.Active, DbType.Boolean);
+                    // parameters.Add("UserId", userId, DbType.Int32); // existing user to update
+
+                    if (_dapper.ExecuteSql(sql, parameters))
+                    {
+                        return Ok(new { Message = "User signed up successfully." });
+                    }
+                    else
+                    {
+                        throw new Exception("Failed to create user");
+                    }
+
                 }
                 else
                 {
-                    throw new Exception("Failed to create user");
+                    return BadRequest(new { Message = "Error occurred while signing up." });
                 }
-
             }
             else
             {
-                return BadRequest(new { Message = "Error occurred while signing up." });
+                throw new Exception("User with this email already exists!");
             }
-
-            // Here you would typically hash the password and save the user to the database
-            // For simplicity, we are just returning a success message
-
         }
         else
         {
@@ -123,8 +98,7 @@ public class AuthController : ControllerBase
     [HttpPost("Login")]
     public IActionResult Login(LoginUserDTO loginUser)
     {
-        string sqlForHashandSalt = @"SELECT PasswordHash, PasswordSalt FROM TutorialAppSchema.Auth 
-        WHERE Email = @Email;";
+        string sqlForHashandSalt = @"TutorialAppSchema.spLoginConfirmation_Get";
         var parameters = new DynamicParameters();
         parameters.Add("@Email", loginUser.Email);
         var user = _dapper.LoadSingleData<LoginConfirmationUserDTO>(sqlForHashandSalt, parameters);
@@ -162,6 +136,17 @@ public class AuthController : ControllerBase
             return Unauthorized(new { Message = "Invalid email or password." });
         }
 
+    }
+
+
+    [HttpPut("ResetPassword")]
+    public IActionResult ResetPassword(LoginUserDTO userForSetPassword)
+    {
+        if (_authHelper.SetPassword(userForSetPassword))
+        {
+            return Ok();
+        }
+        throw new Exception("Failed to update password!");
     }
 
     [HttpGet("RefreshToken")]

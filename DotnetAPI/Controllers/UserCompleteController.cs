@@ -98,7 +98,7 @@ public class UserCompleteController : ControllerBase
     }
 
     [HttpPut("{userId}")]
-    public IActionResult UpdateUser(int userId, UpdateUserCompleteDTO user)
+    public IActionResult UpdateandInsertUser(int userId, UpdateUserCompleteDTO user)
     {
         string sql = "TutorialAppSchema.spUser_Upsert";
 
